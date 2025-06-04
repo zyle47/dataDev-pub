@@ -50,7 +50,6 @@ function App() {
     await postAnnotations(selected.image_id, newAnnotations);
     alert("New annotations saved!");
     setAnnotationsForThisImage(annotations); // update local state after save
-    window.location.reload();
   };
 
   useEffect(() => {
@@ -73,7 +72,6 @@ function App() {
             initialAnnotations={annotationsForThisImage}
             onSave={async (annotations) => {
               await handleSaveAnnotations(annotations);
-              window.location.reload();
             }}
           />
           <AnnotationDownloader imageId={selected.image_id} />
