@@ -104,8 +104,13 @@ export default function Annotator({
     if (e.detail === 2) {
       // Double click: finish polygon
       const label = window.prompt("Enter label for this polygon:", "");
-      if (!label) return; // Don't add if no label
+      if (label === null) { // Cancel pressed
+        setCurrentPolygon([]);
+        setMode("none");
+        return;
+      }
 
+      // If label is empty, it will be set as ""
       const poly: Polygon = {
         type: "polygon",
         points: currentPolygon,
@@ -141,12 +146,13 @@ export default function Annotator({
     }
 
     const label = window.prompt("Enter label for this box:", "");
-    if (!label) {
+    if (label === null) { // Cancel pressed
       setStartPoint(null);
       setMode("none");
       return;
     }
 
+    // If label is empty, it will be set as ""
     const box: Box = {
       type: "box",
       x: Math.min(startPoint.x, x2),
