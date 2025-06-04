@@ -14,7 +14,7 @@ RUN npm install ajv@latest
 RUN npm install axios@latest
 RUN npm install cors@latest
 RUN npm install babel@latest
-
+RUN npm install --save-dev @types/react @types/react-dom
 # Copy the rest of your application files
 COPY . .
 
