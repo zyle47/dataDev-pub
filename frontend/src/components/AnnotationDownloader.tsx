@@ -1,5 +1,6 @@
 import React from "react";
 import { downloadAnnotations } from "../api";
+import "./AnnotationDownloader.css";
 
 export default function AnnotationDownloader({ imageId }: { imageId: number }) {
   const handleDownload = async () => {
@@ -11,5 +12,5 @@ export default function AnnotationDownloader({ imageId }: { imageId: number }) {
     a.click();
   };
 
-  return <button onClick={handleDownload}>Download Annotations</button>;
+  return <button className={"button"} onClick={handleDownload}>Download Annotations</button>;
 }
