@@ -28,7 +28,8 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.post("/images/")
 async def upload_image(file: UploadFile = File(...)):
-    if file.content_type not in ["image/jpeg", "image/png, image/jpg, image/webp"]:
+    # print(file.content_type)
+    if file.content_type not in ["image/jpeg", "image/png", "image/jpg", "image/webp"]:
         raise HTTPException(status_code=400, detail="Invalid image format")
     
     image_id = str(uuid.uuid4())
