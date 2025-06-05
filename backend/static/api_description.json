@@ -1,5 +1,5 @@
 {
-    "project": "Image Annotation Tool",
+    "project": "OImage Annotation Tool",
     "description": "This is the Python powered backend API for a React frontend that allows uploading images, annotating them, and downloading annotation data.",
     "endpoints": {
         "/images/": {
