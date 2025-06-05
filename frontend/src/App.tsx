@@ -5,7 +5,7 @@ import Annotator from "./components/Annotator";
 import AnnotationDownloader from "./components/AnnotationDownloader";
 import { getImages, getAnnotations, postAnnotations } from "./api";
 import { Annotation, ImageMeta } from "./types";
-
+import "./App.css";
 function App() {
   const [images, setImages] = useState<ImageMeta[]>([]);
   const [selected, setSelected] = useState<ImageMeta | null>(null);

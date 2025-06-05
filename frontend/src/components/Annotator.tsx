@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Annotation, Box, Polygon, ImageMeta } from "../types";
-import axios from "axios";
 import "./Annotator.css";
 
 type Mode = "none" | "box" | "polygon";
@@ -21,29 +20,7 @@ export default function Annotator({
   const [currentPolygon, setCurrentPolygon] = useState<[number, number][]>([]);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    const img = new Image();
-    img.src = `http://localhost:8000${image.url}`;
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-
-      drawAnnotations(ctx);
-    };
-  }, [image, annotations, mode, currentPolygon, startPoint, mousePos]);
-
-  useEffect(() => {
-    setAnnotations(initialAnnotations);
-  }, [image, initialAnnotations]);
-
-  const drawAnnotations = (ctx: CanvasRenderingContext2D) => {
+  const drawAnnotations = React.useCallback((ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "red";
     ctx.lineWidth = 10;  // Thick lines to see on large scale images
     annotations.forEach((ann) => {
@@ -84,21 +61,43 @@ export default function Annotator({
         Math.abs(mousePos.y - startPoint.y)
       );
     }
-  };
+  }, [annotations, mode, currentPolygon, mousePos, startPoint]);
 
-// Utility to get scaled mouse position
-function getScaledMousePos(
-  e: React.MouseEvent,
-  canvas: HTMLCanvasElement
-): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top) * scaleY,
-  };
-}
+  useEffect(() => {
+    const img = new Image();
+    img.src = `http://localhost:8000${image.url}`;
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      drawAnnotations(ctx);
+    };
+  }, [image, annotations, mode, currentPolygon, startPoint, mousePos, drawAnnotations]);
+
+  useEffect(() => {
+    setAnnotations(initialAnnotations);
+  }, [image, initialAnnotations]);
+
+  // Utility to get scaled mouse position
+  function getScaledMousePos(
+    e: React.MouseEvent,
+    canvas: HTMLCanvasElement
+  ): { x: number; y: number } {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -201,14 +200,9 @@ function getScaledMousePos(
           label: a.label // <-- include label
         };
       }
+      
       return a;
     });
-
-    try {
-      await axios.post("/api/annotations", cleaned);
-    } catch (error: any) {
-      console.error(error.response?.data); // <-- Add this line
-    }
 
     onSave(cleaned);
   };
