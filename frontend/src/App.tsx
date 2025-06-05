@@ -5,7 +5,7 @@ import Annotator from "./components/Annotator";
 import AnnotationDownloader from "./components/AnnotationDownloader";
 import { getImages, getAnnotations, postAnnotations } from "./api";
 import { Annotation, ImageMeta } from "./types";
-
+import "./App.css";
 function App() {
   const [images, setImages] = useState<ImageMeta[]>([]);
   const [selected, setSelected] = useState<ImageMeta | null>(null);
@@ -61,23 +61,25 @@ function App() {
   }, [annotationsForThisImage]);
 
   return (
-    <div>
-      <h1>Image Annotator</h1>
-      <ImageUploader onUpload={loadImages} />
-      <ImageList images={images} onSelect={setSelected} />
-      {selected && (
-        <>
-          <Annotator
-            image={selected}
-            initialAnnotations={annotationsForThisImage}
-            onSave={async (annotations) => {
-              await handleSaveAnnotations(annotations);
-            }}
-          />
-          <AnnotationDownloader imageId={selected.image_id} />
-        </>
-      )}
-    </div>
+  <div className={"appContainer"}>
+    <h1>Image Annotator</h1>
+    <ImageUploader onUpload={loadImages} />
+    <ImageList images={images} onSelect={setSelected} />
+    
+    {selected && (
+      <>
+      <AnnotationDownloader imageId={selected.image_id} />
+        <Annotator
+          image={selected}
+          initialAnnotations={annotationsForThisImage}
+          onSave={async (annotations) => {
+            await handleSaveAnnotations(annotations);
+          }}
+        />
+        
+      </>
+    )}
+  </div>
   );
 }
 

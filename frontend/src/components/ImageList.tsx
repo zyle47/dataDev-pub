@@ -1,5 +1,6 @@
 import React from "react";
 import { ImageMeta } from "../types";
+import "./ImageList.css";
 
 export default function ImageList({
   images,
@@ -9,12 +10,18 @@ export default function ImageList({
   onSelect: (img: ImageMeta) => void;
 }) {
   return (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <div className={"container"}>
+      {/* <div className="gallery-scroll"> */}
       {images.map(img => (
-        <div key={img.image_id} onClick={() => onSelect(img)} style={{ cursor: "pointer" }}>
-          <img src={`http://localhost:8000${img.url}`} alt="" width="150" />
+        <div
+          key={img.image_id}
+          className={"imageItem"}
+          onClick={() => onSelect(img)}
+        >
+          <img src={`http://localhost:8000${img.url}`} alt="" />
         </div>
       ))}
+      {/* </div> */}
     </div>
   );
 }

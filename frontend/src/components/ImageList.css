@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.imageItem {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.imageItem:hover {
+  transform: scale(1.05);
+}
+
+.imageItem img {
+  width: 250px;
+  height: 250px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.gallery-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 1rem 0;
+  height: 175px;
+}

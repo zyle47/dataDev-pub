@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Annotation, Box, Polygon, ImageMeta } from "../types";
-import axios from "axios";
+import "./Annotator.css";
 
 type Mode = "none" | "box" | "polygon";
 
@@ -20,31 +20,9 @@ export default function Annotator({
   const [currentPolygon, setCurrentPolygon] = useState<[number, number][]>([]);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    const img = new Image();
-    img.src = `http://localhost:8000${image.url}`;
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-
-      drawAnnotations(ctx);
-    };
-  }, [image, annotations, mode, currentPolygon, startPoint, mousePos]);
-
-  useEffect(() => {
-    setAnnotations(initialAnnotations);
-  }, [image, initialAnnotations]);
-
-  const drawAnnotations = (ctx: CanvasRenderingContext2D) => {
+  const drawAnnotations = React.useCallback((ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 10;  // Thick lines to see on large scale images
     annotations.forEach((ann) => {
       if (ann.type === "box") {
         ctx.strokeRect(ann.x, ann.y, ann.w, ann.h);
@@ -83,11 +61,48 @@ export default function Annotator({
         Math.abs(mousePos.y - startPoint.y)
       );
     }
-  };
+  }, [annotations, mode, currentPolygon, mousePos, startPoint]);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = `http://localhost:8000${image.url}`;
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      drawAnnotations(ctx);
+    };
+  }, [image, annotations, mode, currentPolygon, startPoint, mousePos, drawAnnotations]);
+
+  useEffect(() => {
+    setAnnotations(initialAnnotations);
+  }, [image, initialAnnotations]);
+
+  // Utility to get scaled mouse position
+  function getScaledMousePos(
+    e: React.MouseEvent,
+    canvas: HTMLCanvasElement
+  ): { x: number; y: number } {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = canvasRef.current!.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setMousePos(getScaledMousePos(e, canvas));
   };
 
   const handleMouseLeave = () => {
@@ -96,10 +111,9 @@ export default function Annotator({
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (mode !== "polygon") return;
-
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x, y } = getScaledMousePos(e, canvas);
 
     if (e.detail === 2) {
       // Double click: finish polygon
@@ -127,15 +141,16 @@ export default function Annotator({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (mode !== "box") return;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    setStartPoint({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setStartPoint(getScaledMousePos(e, canvas));
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (mode !== "box" || !startPoint) return;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const x2 = e.clientX - rect.left;
-    const y2 = e.clientY - rect.top;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x: x2, y: y2 } = getScaledMousePos(e, canvas);
 
     const w = Math.abs(x2 - startPoint.x);
     const h = Math.abs(y2 - startPoint.y);
@@ -185,37 +200,44 @@ export default function Annotator({
           label: a.label // <-- include label
         };
       }
+      
       return a;
     });
-
-    try {
-      await axios.post("/api/annotations", cleaned);
-    } catch (error: any) {
-      console.error(error.response?.data); // <-- Add this line
-    }
 
     onSave(cleaned);
   };
 
   return (
     <div>
+    <div className={"toolbar"}>
       <h3>Drawing Mode: {mode}</h3>
       <button onClick={() => setMode("box")}>Draw Box</button>
       <button onClick={() => setMode("polygon")}>Draw Polygon</button>
       <button onClick={saveAnnotations}>💾 Save Annotations</button>
-
-      <canvas
-        ref={canvasRef}
-        style={{ border: "1px solid black", marginTop: "10px", cursor: mode !== "none" ? "crosshair" : "default" }}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onClick={handleCanvasClick}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      />
-      {mode === "polygon" && (
-        <p>Click to add points. Double-click to finish.</p>
-      )}
     </div>
+
+    <canvas
+    ref={canvasRef}
+    style={{
+    width: "1200px",
+    height: "675px",
+    display: "block",
+    margin: "40px auto",
+    border: "2px solid #444",
+    borderRadius: "10px",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
+    cursor: mode !== "none" ? "crosshair" : "default",
+    backgroundColor: "#fff",
+    }}
+    onMouseDown={handleMouseDown}
+    onMouseUp={handleMouseUp}
+    onClick={handleCanvasClick}
+    onMouseMove={handleMouseMove}
+    onMouseLeave={handleMouseLeave}
+    />
+    {mode === "polygon" && (
+      <p>Click to add points. Double-click to finish.</p>
+    )}
+  </div>
   );
 }
