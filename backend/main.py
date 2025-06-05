@@ -10,6 +10,7 @@ import shutil
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+import json
 
 
 def get_db():
@@ -36,6 +37,21 @@ os.makedirs(EXPORT_DIR, exist_ok=True)
 
 Base.metadata.create_all(bind=engine)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+favicon_path = 'static/favicon.ico'  # Adjust path to file
+sample_images = 'static/sample_images'  # Adjust path to sample images
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse(favicon_path)
+
+
+@app.get("/")
+def read_root():
+    with open("static/api_description.json", "r") as file:
+        data = json.load(file)
+    return data
 
 
 @app.post("/images/")

@@ -1,0 +1,36 @@
+{
+    "project": "Image Annotation Tool",
+    "description": "This is the Python powered backend API for a React frontend that allows uploading images, annotating them, and downloading annotation data.",
+    "endpoints": {
+        "/images/": {
+            "GET": {
+                "summary": "List all uploaded images",
+                "response": "List of image metadata"
+            },
+            "POST": {
+                "summary": "Upload a new image",
+                "request_format": "multipart/form-data with 'file' field",
+                "response": "Uploaded image metadata"
+            }
+        },
+        "/images/{image_id}/annotations": {
+            "GET": {
+                "summary": "Retrieve annotations for an image",
+                "response": "List of annotation objects"
+            },
+            "POST": {
+                "summary": "Submit new annotations for an image",
+                "request_format": "JSON array of annotations",
+                "response": "Success message"
+            }
+        },
+        "/images/{image_id}/download-annotations": {
+            "GET": {
+                "summary": "Download annotations for an image",
+                "response": "JSON file containing annotations"
+            }
+        }
+    },
+    "version": "1.5.2",
+    "author": "Nemanja  Zivkovic"
+}
