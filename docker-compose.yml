@@ -1,16 +1,20 @@
 services:
   backend:
-    build: ./backend
-    container_name: backend
-    ports:
-      - "8000:8000"
+    build:
+      context: ./backend
     volumes:
       - ./backend:/backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - frontend  # Add frontend service if you have one
 
   frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "3000:3000"
+    build:
+      context: ./frontend
     volumes:
       - ./frontend:/frontend
+    ports:
+      - "3000:3000"
