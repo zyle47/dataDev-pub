@@ -19,11 +19,3 @@
   border-radius: 4px;
   object-fit: cover;
 }
-
-.gallery-scroll {
-  display: flex;
-  overflow-x: auto;
-  gap: 1rem;
-  padding: 1rem 0;
-  height: 175px;
-}

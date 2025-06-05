@@ -11,7 +11,6 @@ export default function ImageList({
 }) {
   return (
     <div className={"container"}>
-      {/* <div className="gallery-scroll"> */}
       {images.map(img => (
         <div
           key={img.image_id}
@@ -21,7 +20,6 @@ export default function ImageList({
           <img src={`http://localhost:8000${img.url}`} alt="" />
         </div>
       ))}
-      {/* </div> */}
     </div>
   );
 }

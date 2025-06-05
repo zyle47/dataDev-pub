@@ -61,25 +61,29 @@ function App() {
   }, [annotationsForThisImage]);
 
   return (
-  <div className={"appContainer"}>
-    <h1>Image Annotator</h1>
-    <ImageUploader onUpload={loadImages} />
-    <ImageList images={images} onSelect={setSelected} />
-    
-    {selected && (
-      <>
-      <AnnotationDownloader imageId={selected.image_id} />
-        <Annotator
-          image={selected}
-          initialAnnotations={annotationsForThisImage}
-          onSave={async (annotations) => {
-            await handleSaveAnnotations(annotations);
-          }}
-        />
-        
-      </>
-    )}
-  </div>
+  <div className="app-container">
+      <h1 className="app-title">Image Annotation Tool</h1>
+      
+      <div className="upload-section">
+        <ImageUploader onUpload={loadImages} />
+      </div>
+
+      <div className="image-list-section">
+        <ImageList images={images} onSelect={setSelected} />
+      </div>
+
+      {selected && (
+        <div className="annotation-section">
+          <AnnotationDownloader imageId={selected.image_id} />
+          
+          <Annotator
+            image={selected}
+            initialAnnotations={annotationsForThisImage}
+            onSave={handleSaveAnnotations}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
