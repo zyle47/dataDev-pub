@@ -25,11 +25,16 @@ export default function ImageUploader({ onUpload }: { onUpload: () => void }) {
   return (
     <div className={"uploader"}>
       <input
+        id="file-upload"
         type="file"
         accept="image/png, image/jpeg, image/jpg, image/webp"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
         ref={inputRef}
+        style={{ display: "none" }}
       />
+      <label htmlFor="file-upload" className="custom-upload-button">
+        Choose Image
+      </label>
       <button className={"button"} onClick={handleUpload} disabled={!file}>Upload</button>
     </div>
   );
