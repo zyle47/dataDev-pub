@@ -10,7 +10,7 @@ body {
   background-color: rgb(216, 142, 31);
   color: #333;
   line-height: 1.6;
-  background-image: url('./background2.jpg');
+  background-image: url('../public/background2.jpg');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;
