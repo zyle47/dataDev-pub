@@ -22,10 +22,15 @@ export default function Annotator({
 
   const drawAnnotations = React.useCallback((ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "red";
-    ctx.lineWidth = 10;  // Thick lines to see on large scale images
+    ctx.lineWidth = 10;  // Thicker lines to see on large scale images
     annotations.forEach((ann) => {
       if (ann.type === "box") {
         ctx.strokeRect(ann.x, ann.y, ann.w, ann.h);
+        if (ann.label) {
+          ctx.font = "150px Arial";
+          ctx.fillStyle = "red";
+          ctx.fillText(ann.label, ann.x, ann.y - 8);
+        }
       } else if (ann.type === "polygon") {
         ctx.beginPath();
         ann.points.forEach(([x, y], idx) => {
@@ -34,6 +39,13 @@ export default function Annotator({
         });
         ctx.closePath();
         ctx.stroke();
+        // Draw label at the first clicked point
+        if (ann.label && ann.points.length > 0) {
+          const [labelX, labelY] = ann.points[0];
+          ctx.font = "150px Arial";
+          ctx.fillStyle = "red";
+          ctx.fillText(ann.label, labelX, labelY - 8);
+        }
       }
     });
 
