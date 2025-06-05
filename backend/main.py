@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Body
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from database import SessionLocal, engine
@@ -30,6 +30,7 @@ app.add_middleware(
 )
 UPLOAD_DIR = "uploads"
 EXPORT_DIR = "annotations_export"
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(EXPORT_DIR, exist_ok=True)
 
@@ -52,42 +53,33 @@ async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_d
         shutil.copyfileobj(file.file, buffer)
 
     image = create_image(db, filename)
-    db.close()
     return {"image_id": image.id, "url": f"/uploads/{filename}"}
 
 
 @app.get("/images/")
 def list_images(db: Session = Depends(get_db)):
     images = get_all_images(db)
-    db.close()
     return images
 
 
 @app.post("/images/{image_id}/annotations")
-def add_annotations(image_id: int, annotations: list[AnnotationSchema], db: Session = Depends(get_db)):
-    print("Received annotations:")
-    for a in annotations:
-        print(a)
+def add_annotations(image_id: int, annotations: list[AnnotationSchema] = Body(...), db: Session = Depends(get_db)):
     if not get_image(db, image_id):
-        db.close()
         raise HTTPException(status_code=404, detail="Image not found")
 
     save_annotations(db, image_id, annotations)
-    db.close()
     return {"status": "annotations saved"}
 
 
 @app.get("/images/{image_id}/annotations")
 def get_annotations(image_id: int, db: Session = Depends(get_db)):
     ann = get_annotations_by_image(db, image_id)
-    db.close()
     return ann
 
 
 @app.get("/images/{image_id}/download-annotations")
 def download_annotations(image_id: int, db: Session = Depends(get_db)):
     annotations = get_annotations_by_image(db, image_id)
-    db.close()
 
     if not annotations:
         raise HTTPException(status_code=404, detail="No annotations found")
