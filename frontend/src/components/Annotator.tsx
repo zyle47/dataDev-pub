@@ -160,7 +160,7 @@ export default function Annotator({
       return;
     }
 
-    const label = window.prompt("Enter label for this box:", "");
+    const label = window.prompt("Enter label for this annotation:", "");
     if (label === null) { // Cancel pressed
       setStartPoint(null);
       setMode("none");
@@ -209,13 +209,20 @@ export default function Annotator({
 
   return (
     <div>
-    <div className={"toolbar"}>
       <h3>Drawing Mode: {mode}</h3>
+    <div className={"toolbar"}>
+      
       <button onClick={() => setMode("box")}>Draw Box</button>
       <button onClick={() => setMode("polygon")}>Draw Polygon</button>
       <button onClick={saveAnnotations}>💾 Save Annotations</button>
+      
     </div>
-
+    <div style={{ textAlign: "center", margin: "10px 0" }}>
+      {mode === "polygon" && (
+      <p>Click to add points. Double-click to finish.</p>
+    )}
+    </div>
+    
     <canvas
     ref={canvasRef}
     style={{
@@ -235,9 +242,7 @@ export default function Annotator({
     onMouseMove={handleMouseMove}
     onMouseLeave={handleMouseLeave}
     />
-    {mode === "polygon" && (
-      <p>Click to add points. Double-click to finish.</p>
-    )}
+    
   </div>
   );
 }
