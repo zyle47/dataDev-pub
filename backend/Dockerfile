@@ -1,6 +1,6 @@
 # Backend Dockerfile (FastAPI)
 # Use the official Python image from the DockerHub
-FROM python:3.13
+FROM python:3.10
 
 # Set the working directory inside the container
 WORKDIR /backend

@@ -11,9 +11,6 @@ import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import json
-import logging
-
-DATABASE_DIR = "datadev.db"
 
 
 def get_db():
@@ -32,61 +29,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 UPLOAD_DIR = "uploads"
 EXPORT_DIR = "annotations_export"
+favicon_path = 'static/favicon.ico'  # Adjust path to file
+sample_images = 'static/sample_images'  # Adjust path to sample images
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(EXPORT_DIR, exist_ok=True)
 
 Base.metadata.create_all(bind=engine)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-favicon_path = 'static/favicon.ico'  # Adjust path to file
-sample_images = 'static/sample_images'  # Adjust path to sample images
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-@app.on_event("startup")
-def populate_db_with_sample_images():
-    """Populate the database with sample images from the static directory."""
-    db = SessionLocal()
-    sample_dir = os.path.join("static", "sample_images")
-    logging.getLogger("uvicorn.info").info(f"Populating DB from: {sample_dir}")
-    for fname in os.listdir(sample_dir):
-        if fname.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-            src_path = os.path.join(sample_dir, fname)
-            # Generate a filename for uploads
-            image_id = str(uuid.uuid4())
-            ext = os.path.splitext(fname)[1]
-            upload_fname = f"{image_id}{ext}"
-            dst_path = os.path.join(UPLOAD_DIR, upload_fname)
-            shutil.copyfile(src_path, dst_path)
-            # Add to DB
-            create_image(db, upload_fname)
-    db.close()
-
-
-@app.on_event("shutdown")
-def shutdown_event():
-    """
-    Handle shutdown event to clean up resources.
-    This includes closing database sessions and removing temporary files.
-    """
-    # Close all sessions and dispose engine if needed
-    from sqlalchemy import inspect
-    if inspect(engine).engine:
-        engine.dispose()
-    if os.path.exists(DATABASE_DIR):
-        try:
-            os.remove(DATABASE_DIR)
-            if os.path.exists(EXPORT_DIR):
-                shutil.rmtree(EXPORT_DIR)
-            if os.path.exists(UPLOAD_DIR):
-                shutil.rmtree(UPLOAD_DIR)
-            logging.getLogger("uvicorn.info").info(f"Database removed: {DATABASE_DIR}")
-        except Exception as e:
-            os.remove(EXPORT_DIR)
-            os.remove(UPLOAD_DIR)
-            logging.getLogger("uvicorn.error").error(f"Could not remove {DATABASE_DIR}: {e}")
 
 
 @app.get('/favicon.ico', include_in_schema=False)
@@ -105,6 +59,7 @@ def read_root():
 
 @app.post("/images/")
 async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # print(file.content_type)
     if file.content_type not in ["image/jpeg", "image/png", "image/jpg", "image/webp"]:
         raise HTTPException(status_code=400, detail="Invalid image format")
 
