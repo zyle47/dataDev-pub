@@ -42,6 +42,27 @@ sample_images = 'static/sample_images'  # Adjust path to sample images
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+#     Base.metadata.drop_all(bind=engine)
+#     Base.metadata.create_all(bind=engine)
+# 2. Populate DB with images from static/sample_images
+
+db = SessionLocal()
+sample_dir = os.path.join("static", "sample_images")
+print("Populating DB from:", sample_dir)
+for fname in os.listdir(sample_dir):
+    if fname.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+        src_path = os.path.join(sample_dir, fname)
+        # Generate a unique filename for uploads
+        image_id = str(uuid.uuid4())
+        ext = os.path.splitext(fname)[1]
+        upload_fname = f"{image_id}{ext}"
+        dst_path = os.path.join(UPLOAD_DIR, upload_fname)
+        shutil.copyfile(src_path, dst_path)
+        # Add to DB
+        create_image(db, upload_fname)
+db.close()
+
+
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse(favicon_path)
@@ -110,4 +131,24 @@ def download_annotations(image_id: int, db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    print("Populating DB from:")
+    # 2. Populate DB with images from static/sample_images
+    db = SessionLocal()
+    sample_dir = os.path.join("static", "sample_images")
+    print("Populating DB from:", sample_dir)
+    for fname in os.listdir(sample_dir):
+        if fname.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            src_path = os.path.join(sample_dir, fname)
+            # Generate a unique filename for uploads
+            image_id = str(uuid.uuid4())
+            ext = os.path.splitext(fname)[1]
+            upload_fname = f"{image_id}{ext}"
+            dst_path = os.path.join(UPLOAD_DIR, upload_fname)
+            shutil.copyfile(src_path, dst_path)
+            # Add to DB
+            create_image(db, upload_fname)
+    db.close()
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
