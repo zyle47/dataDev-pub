@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Annotation, Box, Polygon, ImageMeta } from "../types";
 import "./Annotator.css";
+import AnnotationDownloader from "./AnnotationDownloader";
 
 type Mode = "none" | "box" | "polygon";
 
@@ -28,7 +29,7 @@ export default function Annotator({
         ctx.strokeRect(ann.x, ann.y, ann.w, ann.h);
         if (ann.label) {
           ctx.font = "150px Arial";
-          ctx.fillStyle = "red";
+          ctx.fillStyle = "blue";
           ctx.fillText(ann.label, ann.x, ann.y - 8);
         }
       } else if (ann.type === "polygon") {
@@ -43,7 +44,7 @@ export default function Annotator({
         if (ann.label && ann.points.length > 0) {
           const [labelX, labelY] = ann.points[0];
           ctx.font = "150px Arial";
-          ctx.fillStyle = "red";
+          ctx.fillStyle = "purple";
           ctx.fillText(ann.label, labelX, labelY - 8);
         }
       }
@@ -221,13 +222,13 @@ export default function Annotator({
 
   return (
     <div>
-      <h3>Drawing Mode: {mode}</h3>
+      <h3 className="h3o">Drawing Mode: {mode}</h3>
     <div className={"toolbar"}>
       
       <button onClick={() => setMode("box")}>Draw Box</button>
       <button onClick={() => setMode("polygon")}>Draw Polygon</button>
-      <button onClick={saveAnnotations}>💾 Save Annotations</button>
-      
+      <button onClick={saveAnnotations}>Preserve shapes</button>
+      <AnnotationDownloader imageId={image.image_id} />
     </div>
     <div style={{ textAlign: "center", margin: "10px 0" }}>
       {mode === "polygon" && (

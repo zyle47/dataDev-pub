@@ -21,5 +21,5 @@ export default function AnnotationDownloader({ imageId }: { imageId: number }) {
     }
   };
 
-  return <button className={"button"} onClick={handleDownload}>Download Annotations</button>;
+  return <button className={"button"} onClick={handleDownload}>💾 Download Annotations</button>;
 }

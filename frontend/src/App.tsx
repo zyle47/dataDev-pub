@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import ImageUploader from "./components/ImageUploader";
 import ImageList from "./components/ImageList";
 import Annotator from "./components/Annotator";
-import AnnotationDownloader from "./components/AnnotationDownloader";
 import { getImages, getAnnotations, postAnnotations } from "./api";
 import { Annotation, ImageMeta } from "./types";
 import "./App.css";
@@ -74,8 +73,6 @@ function App() {
 
       {selected && (
         <div className="annotation-section">
-          <AnnotationDownloader imageId={selected.image_id} />
-          
           <Annotator
             image={selected}
             initialAnnotations={annotationsForThisImage}
