@@ -33,7 +33,7 @@ export default function ImageUploader({ onUpload }: { onUpload: () => void }) {
         style={{ display: "none" }}
       />
       <label htmlFor="file-upload" className="custom-upload-button">
-        Choose Image
+        Choose Image to upload
       </label>
       <button className={"button"} onClick={handleUpload} disabled={!file}>Upload</button>
     </div>

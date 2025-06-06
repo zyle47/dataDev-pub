@@ -16,7 +16,6 @@ engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": Fal
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# Override dependency
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -27,10 +26,8 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-# Create test client
 client = TestClient(app)
 
-# Use temp directories
 TEMP_UPLOAD_DIR = "test_uploads"
 TEMP_EXPORT_DIR = "test_exports"
 
@@ -40,8 +37,9 @@ def setup_and_teardown():
     os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
     os.makedirs(TEMP_EXPORT_DIR, exist_ok=True)
 
-    app.UPLOAD_DIR = TEMP_UPLOAD_DIR
-    app.EXPORT_DIR = TEMP_EXPORT_DIR
+    # Override app state upload/export dirs
+    app.state.UPLOAD_DIR = TEMP_UPLOAD_DIR
+    app.state.EXPORT_DIR = TEMP_EXPORT_DIR
 
     Base.metadata.create_all(bind=engine)
 
@@ -49,19 +47,14 @@ def setup_and_teardown():
 
     shutil.rmtree(TEMP_UPLOAD_DIR)
     shutil.rmtree(TEMP_EXPORT_DIR)
-
-    # Dispose of engine to close all connections
     engine.dispose()
-
-    # Now it’s safe to delete the test database
     os.remove(TEST_DB_PATH)
 
 
-# Helper to upload a dummy image
 def upload_dummy_image():
     img_path = "test_dummy.jpg"
     with open(img_path, "wb") as f:
-        f.write(os.urandom(1024))  # 1KB dummy content
+        f.write(os.urandom(1024))
 
     with open(img_path, "rb") as f:
         response = client.post("/images/", files={"file": ("test_dummy.jpg", f, "image/jpeg")})
@@ -73,14 +66,8 @@ def upload_dummy_image():
 # ------------------ TEST CASES ------------------
 
 def test_upload_image():
-    img_path = "test_upload.jpg"
-    with open(img_path, "wb") as f:
-        f.write(os.urandom(1024))
-
-    with open(img_path, "rb") as f:
-        response = client.post("/images/", files={"file": ("test_upload.jpg", f, "image/jpeg")})
-
-    os.remove(img_path)
+    img_bytes = os.urandom(1024)
+    response = client.post("/images/", files={"file": ("test.png", img_bytes, "image/png")})
     assert response.status_code == 200
     assert "image_id" in response.json()
 

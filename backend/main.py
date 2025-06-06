@@ -30,16 +30,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "uploads"
-EXPORT_DIR = "annotations_export"
-favicon_path = 'static/favicon.ico'  # Adjust path to file
-sample_images = 'static/sample_images'  # Adjust path to sample images
+# app.state for configurable paths
+app.state.UPLOAD_DIR = "uploads"
+app.state.EXPORT_DIR = "annotations_export"
+favicon_path = 'static/favicon.ico'
+sample_images = 'static/sample_images'
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(EXPORT_DIR, exist_ok=True)
+os.makedirs(app.state.UPLOAD_DIR, exist_ok=True)
+os.makedirs(app.state.EXPORT_DIR, exist_ok=True)
 
 Base.metadata.create_all(bind=engine)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount("/uploads", StaticFiles(directory=app.state.UPLOAD_DIR), name="uploads")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -55,18 +56,15 @@ def read_root():
     return data
 
 
-# ----- API Endpoints for frontend to interact with images and annotations -----
-
 @app.post("/images/")
 async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    # print(file.content_type)
     if file.content_type not in ["image/jpeg", "image/png", "image/jpg", "image/webp"]:
         raise HTTPException(status_code=400, detail="Invalid image format")
 
     image_id = str(uuid.uuid4())
     ext = os.path.splitext(file.filename)[1]
     filename = f"{image_id}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
+    filepath = os.path.join(app.state.UPLOAD_DIR, filename)
 
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -103,9 +101,8 @@ def download_annotations(image_id: int, db: Session = Depends(get_db)):
     if not annotations:
         raise HTTPException(status_code=404, detail="No annotations found")
 
-    filepath = os.path.join(EXPORT_DIR, f"{image_id}_annotations.json")
+    filepath = os.path.join(app.state.EXPORT_DIR, f"{image_id}_annotations.json")
     with open(filepath, "w") as f:
-        import json
         json.dump(annotations, f)
 
     return FileResponse(filepath, filename=os.path.basename(filepath), media_type="application/json")

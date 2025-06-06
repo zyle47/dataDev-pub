@@ -98,6 +98,10 @@ export default function Annotator({
     setAnnotations(initialAnnotations);
   }, [image, initialAnnotations]);
 
+  useEffect(() => {
+    setMode("none");
+  }, [image]);
+
   // Utility to get scaled mouse position
   function getScaledMousePos(
     e: React.MouseEvent,
@@ -227,7 +231,7 @@ export default function Annotator({
       
       <button onClick={() => setMode("box")}>Draw Box</button>
       <button onClick={() => setMode("polygon")}>Draw Polygon</button>
-      <button onClick={saveAnnotations}>Preserve shapes</button>
+      <button onClick={saveAnnotations}>Save annotations</button>
       <AnnotationDownloader imageId={image.image_id} />
     </div>
     <div style={{ textAlign: "center", margin: "10px 0" }}>

@@ -47,26 +47,31 @@ Before you start, make sure you have the following installed:
         ```bash
         git clone https://github.com/zyle47/test-datadev.git
         ```
+        
+        This will create new folder called /dataDev-pub
 
     2. Navigate to the project folder:
 
         ```bash
-        cd /your-project-name
+        cd /dataDev-pub
         ```
 
     3. Install the dependencies:
 
-        Server for frontend:
+        Navigate and set up server for frontend:
         
         ```bash
         cd /dataDev-pub/frontend
         npm install
         ```
 
-        Server for backend:
+        Navigate and set up server for backend:
 
         ```bash
         cd /dataDev-pub/backend
+        python3.10 -m venv venv
+        source venv/bin/activate (linux)
+        ./venv/Scripts/activate (Windows)
         pip install -r requirements.txt
         ```
 
@@ -85,6 +90,15 @@ Before you start, make sure you have the following installed:
 
     2. Backend:
 
+    To run tests, use pytest module:
+    
+    ```bash
+    cd /dataDev-pub/backend
+    pytest test_main.py
+    ```
+
+    Start the server:
+
     ```bash
     cd /dataDev-pub/backend
     uvicorn main:app --reload
@@ -99,8 +113,7 @@ Before you start, make sure you have the following installed:
 3. ### Installing with Docker
 
     Start everything at once with Docker (easy way):
-    
-    
+        
     1. Navigate to main folder containing docker-compose.yml:
     ```    
     cd /dataDev-pub
