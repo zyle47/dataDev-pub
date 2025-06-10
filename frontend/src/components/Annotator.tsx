@@ -29,7 +29,7 @@ export default function Annotator({
         ctx.strokeRect(ann.x, ann.y, ann.w, ann.h);
         if (ann.label) {
           ctx.font = "150px Arial";
-          ctx.fillStyle = "blue";
+          ctx.fillStyle = "red";
           ctx.fillText(ann.label, ann.x, ann.y - 8);
         }
       } else if (ann.type === "polygon") {
