@@ -1,20 +1,28 @@
+version: '3.7'
+
 services:
   backend:
     build:
       context: ./backend
     volumes:
-      - ./backend
+      - backend:/app/backend  # Mount backend volume to /app/backend in the container
     ports:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:
-      - frontend  # Add frontend service if you have one
+      - frontend  # Ensure frontend starts first (if it's a dependency)
 
   frontend:
     build:
       context: ./frontend
     volumes:
-      - ./frontend
+      - frontend:/app/frontend  # Mount frontend volume to /app/frontend in the container
     ports:
       - "3000:3000"
+
+volumes:
+  backend:
+    driver: local  # Docker-managed volume for backend
+  frontend:
+    driver: local  # Docker-managed volume for frontend
