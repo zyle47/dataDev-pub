@@ -1,18 +1,10 @@
 version: "3.9"
 services:
   backend:
-<<<<<<< Updated upstream
     build: ./backend
-=======
-    build:
-      context: ./backend
-    volumes:
-      - ./backend:/app/backend  # Mount backend volume to /app/backend in the container
->>>>>>> Stashed changes
     ports:
       - "8000:8000"
     volumes:
-<<<<<<< Updated upstream
       - ./backend:/app
   frontend:
     build: ./frontend
@@ -20,16 +12,3 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
-=======
-      - ./frontend:/app/frontend  # Mount frontend volume to /app/frontend in the container
-    ports:
-      - "3000:3000"
-    environment:
-    - CHOKIDAR_USEPOLLING=true
-
-volumes:
-  backend:
-    driver: local  # Docker-managed volume for backend
-  frontend:
-    driver: local  # Docker-managed volume for frontend
->>>>>>> Stashed changes
