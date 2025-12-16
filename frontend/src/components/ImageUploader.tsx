@@ -18,7 +18,7 @@ export default function ImageUploader({ onUpload }: { onUpload: () => void }) {
       onUpload(); // Trigger refresh in parent (re-fetch images)
     } catch (error) {
       alert("Upload failed");
-      console.error(error);
+      // console.error(error);
     }
   };
 

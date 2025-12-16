@@ -27,7 +27,8 @@ def save_annotations(db: Session, image_id: int, annotations: list):
         annotation = Annotation(
             image_id=image_id,
             type=ann.type,
-            data=json.dumps(ann.model_dump())     # serialize the fmodel as JSON
+            data=json.dumps(ann.model_dump()),
+            label=ann.label
         )
         db.add(annotation)
     db.commit()
