@@ -469,10 +469,10 @@ export default function Annotator({
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas Area */}
-        <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
+        <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
           <canvas
             ref={canvasRef}
-            className={`max-w-full max-h-full shadow-2xl rounded-lg border-2 border-gray-300 ${
+            className={`max-w-full max-h-full shadow-2xl rounded-lg border-2 border-gray-300 select-none ${
               mode !== "none" ? "cursor-crosshair" : "cursor-default"
             }`}
             onMouseDown={handleMouseDown}
@@ -480,6 +480,7 @@ export default function Annotator({
             onClick={handleCanvasClick}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+            onContextMenu={(e) => e.preventDefault()}
           />
         </div>
 
