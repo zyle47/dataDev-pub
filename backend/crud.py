@@ -37,3 +37,13 @@ def save_annotations(db: Session, image_id: int, annotations: list):
 def get_annotations_by_image(db: Session, image_id: int):
     anns = db.query(Annotation).filter(Annotation.image_id == image_id).all()
     return [json.loads(ann.data) for ann in anns]
+
+
+def delete_image(db: Session, image_id: int):
+    image = db.query(Image).filter(Image.id == image_id).first()
+    if not image:
+        return None
+    filename = image.filename
+    db.delete(image)
+    db.commit()
+    return filename

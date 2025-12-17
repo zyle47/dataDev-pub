@@ -2,9 +2,9 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Body
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from database import SessionLocal, engine
-from models import Base
+from models import Base, Annotation
 from schemas import AnnotationSchema
-from crud import create_image, get_all_images, get_image, save_annotations, get_annotations_by_image
+from crud import create_image, get_all_images, get_image, save_annotations, get_annotations_by_image, delete_image
 import os
 import shutil
 import uuid
@@ -73,6 +73,40 @@ async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_d
     return {"image_id": image.id, "url": f"/uploads/{filename}"}
 
 
+@app.post("/images/bulk")
+async def upload_images_bulk(files: list[UploadFile] = File(...), db: Session = Depends(get_db)):
+    """Upload multiple images at once"""
+    uploaded = []
+    errors = []
+    
+    for file in files:
+        try:
+            if file.content_type not in ["image/jpeg", "image/png", "image/jpg", "image/webp"]:
+                errors.append({"filename": file.filename, "error": "Invalid image format"})
+                continue
+
+            image_id = str(uuid.uuid4())
+            ext = os.path.splitext(file.filename)[1]
+            filename = f"{image_id}{ext}"
+            filepath = os.path.join(app.state.UPLOAD_DIR, filename)
+
+            with open(filepath, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            image = create_image(db, filename)
+            uploaded.append({"image_id": image.id, "url": f"/uploads/{filename}", "original_name": file.filename})
+        except Exception as e:
+            errors.append({"filename": file.filename, "error": str(e)})
+    
+    return {
+        "uploaded": uploaded,
+        "errors": errors,
+        "total": len(files),
+        "success_count": len(uploaded),
+        "error_count": len(errors)
+    }
+
+
 @app.get("/images/")
 def list_images(db: Session = Depends(get_db)):
     images = get_all_images(db)
@@ -106,6 +140,41 @@ def download_annotations(image_id: int, db: Session = Depends(get_db)):
         json.dump(annotations, f)
 
     return FileResponse(filepath, filename=os.path.basename(filepath), media_type="application/json")
+
+
+@app.delete("/images/{image_id}/annotations")
+def delete_all_annotations(image_id: int, db: Session = Depends(get_db)):
+    if not get_image(db, image_id):
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    deleted_count = db.query(Annotation).filter(Annotation.image_id == image_id).delete()
+    db.commit()
+    
+    return {"status": "success", "deleted_count": deleted_count}
+
+
+@app.delete("/images/{image_id}")
+def delete_image_endpoint(image_id: int, db: Session = Depends(get_db)):
+    """Delete an image and all its annotations"""
+    image = get_image(db, image_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    # Delete all annotations for this image
+    db.query(Annotation).filter(Annotation.image_id == image_id).delete()
+    
+    # Delete the image file from disk
+    filename = delete_image(db, image_id)
+    if filename:
+        filepath = os.path.join(app.state.UPLOAD_DIR, filename)
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception as e:
+                # Log error but don't fail if file doesn't exist
+                pass
+    
+    return {"status": "success", "message": "Image and all annotations deleted"}
 
 
 if __name__ == "__main__":

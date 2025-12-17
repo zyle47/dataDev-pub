@@ -9,7 +9,7 @@ export type Box = {
 
 export type Polygon = {
   type: "polygon";
-  points: [number, number][];
+  points: number[][]; // Aligned with backend: list[list[int]]
   label: string;
 };
 
