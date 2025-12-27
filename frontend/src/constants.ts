@@ -1,6 +1,26 @@
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.0.26:8000';
+// API Configuration - dynamically uses the same host as the frontend
+const getApiBaseUrl = () => {
+  // If REACT_APP_API_URL is explicitly set, use it
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // If accessing via custom domain, use api subdomain (no port needed with nginx)
+  if (hostname === 'mysite.local') {
+    return 'http://api.mysite.local';
+  }
+  
+  // For IP-based access (or localhost), use /api path through nginx
+  return `${protocol}//${hostname}/api`;
+};
 
+export const API_BASE_URL = getApiBaseUrl();
 // Canvas Configuration
 export const CANVAS_CONFIG = {
   DISPLAY_WIDTH: 1200,

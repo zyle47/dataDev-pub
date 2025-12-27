@@ -42,6 +42,21 @@ export default function Annotator({
   const [showInputDialog, setShowInputDialog] = useState(false);
   const [pendingAnnotation, setPendingAnnotation] = useState<PendingAnnotation | null>(null);
 
+  const finishPolygon = () => {
+    if (currentPolygon.length < ANNOTATION_CONFIG.MIN_POLYGON_POINTS) {
+      showError(`Polygon must have at least ${ANNOTATION_CONFIG.MIN_POLYGON_POINTS} points.`);
+      setCurrentPolygon([]);
+      setMode("none");
+      return;
+    }
+
+    setPendingAnnotation({
+      type: "polygon",
+      data: { points: currentPolygon }
+    });
+    setShowInputDialog(true);
+  };
+
   const drawAnnotations = React.useCallback((ctx: CanvasRenderingContext2D) => {
     const canvas = ctx.canvas;
     // Calculate scale factor based on image size (for consistent line thickness)
@@ -227,6 +242,21 @@ export default function Annotator({
     };
   }
 
+  // Utility to get scaled touch position
+  function getScaledTouchPos(
+    e: React.TouchEvent,
+    canvas: HTMLCanvasElement
+  ): { x: number; y: number } {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const touch = e.touches[0] || e.changedTouches[0];
+    return {
+      x: (touch.clientX - rect.left) * scaleX,
+      y: (touch.clientY - rect.top) * scaleY,
+    };
+  }
+
   const handleMouseMove = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -234,6 +264,58 @@ export default function Annotator({
   };
 
   const handleMouseLeave = () => {
+    setMousePos(null);
+  };
+
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (mode !== "box") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setStartPoint(getScaledTouchPos(e, canvas));
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setMousePos(getScaledTouchPos(e, canvas));
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const pos = getScaledTouchPos(e, canvas);
+
+    if (mode === "box" && startPoint) {
+      const w = Math.abs(pos.x - startPoint.x);
+      const h = Math.abs(pos.y - startPoint.y);
+
+      if (w < ANNOTATION_CONFIG.MIN_BOX_SIZE || h < ANNOTATION_CONFIG.MIN_BOX_SIZE) {
+        showError(`Box must be at least ${ANNOTATION_CONFIG.MIN_BOX_SIZE}px in width and height.`);
+        setStartPoint(null);
+        return;
+      }
+
+      setPendingAnnotation({
+        type: "box",
+        data: {
+          x: Math.min(startPoint.x, pos.x),
+          y: Math.min(startPoint.y, pos.y),
+          w,
+          h
+        }
+      });
+      setShowInputDialog(true);
+      setStartPoint(null);
+    } else if (mode === "polygon") {
+      // For polygon, add point on tap
+      setCurrentPolygon([...currentPolygon, [pos.x, pos.y]]);
+    }
+
     setMousePos(null);
   };
 
@@ -403,14 +485,14 @@ export default function Annotator({
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-purple-200 px-6 flex-shrink-0 h-[60px] flex items-center">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-gray-700">Drawing Mode:</span>
+      <div className="bg-white/90 backdrop-blur-sm border-b border-purple-200 px-2 md:px-6 flex-shrink-0 min-h-[60px] flex items-center">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2 md:gap-0 py-2 md:py-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <span className="text-xs md:text-sm font-semibold text-gray-700">Drawing Mode:</span>
             <div className="flex gap-2">
               <button
                 onClick={() => setMode("box")}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 ${
+                className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-lg font-medium transition-all duration-200 ${
                   mode === "box"
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -420,7 +502,7 @@ export default function Annotator({
               </button>
               <button
                 onClick={() => setMode("polygon")}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 ${
+                className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-lg font-medium transition-all duration-200 ${
                   mode === "polygon"
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -428,8 +510,16 @@ export default function Annotator({
               >
                 🔷 Polygon
               </button>
+              {mode === "polygon" && currentPolygon.length >= ANNOTATION_CONFIG.MIN_POLYGON_POINTS && (
+                <button
+                  onClick={finishPolygon}
+                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white shadow-md transition-all duration-200"
+                >
+                  ✓ Finish ({currentPolygon.length} points)
+                </button>
+              )}
               {(mode === "polygon" || mode === "box") && (
-                <span className="ml-2 text-xs text-gray-500 flex items-center">
+                <span className="hidden lg:flex ml-2 text-xs text-gray-500 items-center">
                   {mode === "polygon" && `Click to add points, double-click to finish (min ${ANNOTATION_CONFIG.MIN_POLYGON_POINTS})`}
                   {mode === "box" && "Click and drag to draw a bounding box"}
                 </span>
@@ -437,26 +527,26 @@ export default function Annotator({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <button
               onClick={saveAnnotations}
               disabled={annotations.length - savedAnnotationCount === 0}
-              className={`w-32 py-2 text-sm rounded-lg font-medium text-white shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+              className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-medium text-white shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 ${
                 annotations.length - savedAnnotationCount === 0
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105'
+                  : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               Save ({annotations.length - savedAnnotationCount})
             </button>
             <button
               onClick={clearAllAnnotations}
-              className="w-28 py-2 text-sm rounded-lg font-medium text-white bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+              className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm rounded-lg font-medium text-white bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-1 md:gap-2"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Clear
@@ -467,12 +557,12 @@ export default function Annotator({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Canvas Area */}
-        <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
+        <div className="flex-1 flex items-center justify-center p-2 md:p-6 overflow-hidden">
           <canvas
             ref={canvasRef}
-            className={`max-w-full max-h-full shadow-2xl rounded-lg border-2 border-gray-300 select-none ${
+            className={`max-w-full max-h-full shadow-2xl rounded-lg border-2 border-gray-300 select-none touch-none ${
               mode !== "none" ? "cursor-crosshair" : "cursor-default"
             }`}
             onMouseDown={handleMouseDown}
@@ -480,28 +570,31 @@ export default function Annotator({
             onClick={handleCanvasClick}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             onContextMenu={(e) => e.preventDefault()}
           />
         </div>
 
         {/* Annotations Sidebar */}
         {annotations.length > 0 && (
-          <div className="w-64 bg-white/80 backdrop-blur-sm border-l border-purple-200 flex flex-col">
-            <div className="px-4 py-3 border-b border-purple-200 bg-white/50">
-              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-full md:w-64 bg-white/80 backdrop-blur-sm border-t md:border-t-0 md:border-l border-purple-200 flex flex-col max-h-48 md:max-h-none">
+            <div className="px-4 py-2 md:py-3 border-b border-purple-200 bg-white/50">
+              <h3 className="text-xs md:text-sm font-bold text-gray-800 flex items-center gap-2">
+                <svg className="w-3 h-3 md:w-4 md:h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
                 Annotations ({annotations.length})
               </h3>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 md:p-3 space-y-1.5 md:space-y-2">
               {annotations.map((ann, index) => (
                 <div
                   key={index}
                   onClick={() => setSelectedAnnotationIndex(index)}
-                  className={`group p-2.5 rounded-lg cursor-pointer transition-all duration-200 ${
+                  className={`group p-2 md:p-2.5 rounded-lg cursor-pointer transition-all duration-200 ${
                     index === selectedAnnotationIndex
                       ? "bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-400 shadow-md"
                       : "bg-white hover:bg-gray-50 border border-gray-200 hover:border-purple-300"
@@ -509,11 +602,11 @@ export default function Annotator({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-lg">{ann.type === 'box' ? '📦' : '🔷'}</span>
-                        <span className="text-xs font-semibold text-gray-500 uppercase">{ann.type}</span>
+                      <div className="flex items-center gap-1 md:gap-1.5 mb-1">
+                        <span className="text-base md:text-lg">{ann.type === 'box' ? '📦' : '🔷'}</span>
+                        <span className="text-[10px] md:text-xs font-semibold text-gray-500 uppercase">{ann.type}</span>
                       </div>
-                      <p className="text-sm font-medium text-gray-800 truncate">{ann.label}</p>
+                      <p className="text-xs md:text-sm font-medium text-gray-800 truncate">{ann.label}</p>
                     </div>
                     <button
                       onClick={(e) => {
@@ -522,7 +615,7 @@ export default function Annotator({
                       }}
                       className="flex-shrink-0 p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
