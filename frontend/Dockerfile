@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "NODE_OPTIONS='--no-deprecation' npm start"]
