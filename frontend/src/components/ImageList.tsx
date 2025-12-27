@@ -6,12 +6,14 @@ export default function ImageList({
   images,
   onSelect,
   onDelete,
-  selectedId
+  selectedId,
+  isMobile = false
 }: {
   images: ImageMeta[];
   onSelect: (img: ImageMeta) => void;
   onDelete: (img: ImageMeta) => void;
   selectedId?: number;
+  isMobile?: boolean;
 }) {
   if (images.length === 0) {
     return (
@@ -34,13 +36,7 @@ export default function ImageList({
         return (
           <div
             key={img.image_id}
-            onClick={() => {
-              if (isSelected) {
-                onSelect(null as any); // Deselect if already selected
-              } else {
-                onSelect(img);
-              }
-            }}
+            onClick={() => onSelect(img)}
             className={`group relative aspect-square cursor-pointer rounded-lg overflow-hidden transition-all duration-300 ${
               isSelected
                 ? 'ring-4 ring-purple-500 shadow-lg scale-105'
@@ -53,13 +49,15 @@ export default function ImageList({
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
             
-            {/* Delete button */}
+            {/* Delete button - show on hover OR when selected */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(img);
               }}
-              className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+              className={`absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg transition-opacity duration-200 z-10 ${
+                isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}
               title="Delete image"
             >
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,13 +65,23 @@ export default function ImageList({
               </svg>
             </button>
             
-            {/* Selection indicator */}
+            {/* Selection indicator with instruction */}
             {isSelected && (
-              <div className="absolute top-2 left-2 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center shadow-lg z-10">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
+              <>
+                <div className="absolute top-2 left-2 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center shadow-lg z-10">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                {/* Tap again hint - only on mobile */}
+                {isMobile && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-purple-600/20 backdrop-blur-[1px] z-[5]">
+                    <div className="bg-purple-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-semibold">
+                      Tap again to edit
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             
             {/* Hover overlay */}

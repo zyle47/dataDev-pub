@@ -74,7 +74,7 @@ export default function ImageUploader({ onUpload, showToast, showError }: ImageU
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-1 md:gap-3">
       <input
         ref={inputRef}
         id="file-upload-compact"
@@ -88,38 +88,38 @@ export default function ImageUploader({ onUpload, showToast, showError }: ImageU
       
       {files.length > 0 ? (
         <>
-          <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
-            <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 bg-purple-50 rounded-lg border border-purple-200">
+            <svg className="w-3 h-3 md:w-4 md:h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="text-sm font-medium text-gray-700">
-              {files.length} {files.length === 1 ? 'file' : 'files'} selected
+            <span className="text-xs md:text-sm font-medium text-gray-700">
+              {files.length}
             </span>
           </div>
           
           <button
             onClick={handleUpload}
             disabled={isUploading}
-            className={`px-4 py-2 rounded-lg font-medium text-white shadow-md transition-all duration-200 flex items-center gap-2 ${
+            className={`px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-white shadow-md transition-all duration-200 flex items-center gap-1 md:gap-2 ${
               isUploading
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105'
+                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
             }`}
           >
             {isUploading ? (
               <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <svg className="animate-spin h-3 w-3 md:h-4 md:w-4" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span className="text-sm">Uploading...</span>
+                <span className="text-xs md:text-sm hidden xs:inline">Uploading...</span>
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <span className="text-sm">Upload All</span>
+                <span className="text-xs md:text-sm">Upload</span>
               </>
             )}
           </button>
@@ -131,9 +131,9 @@ export default function ImageUploader({ onUpload, showToast, showError }: ImageU
                 inputRef.current.value = "";
               }
             }}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="p-1.5 md:p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -141,12 +141,12 @@ export default function ImageUploader({ onUpload, showToast, showError }: ImageU
       ) : (
         <label
           htmlFor="file-upload-compact"
-          className="px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer flex items-center gap-2"
+          className="px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md transition-all duration-200 cursor-pointer flex items-center gap-1 md:gap-2"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          <span className="text-sm">Upload Images</span>
+          <span className="text-xs md:text-sm">Upload</span>
         </label>
       )}
     </div>

@@ -24,7 +24,15 @@ def get_db():
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.0.26:3000",     # Machine's IP
+        "http://192.168.0.26:8000",     # Machine's IP
+        "http://192.168.0.26",           # Machine's IP
+        "http://mysite.local",           # Custom local domain
+        "http://api.mysite.local",       # Custom local domain
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
