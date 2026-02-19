@@ -1,6 +1,6 @@
 // API Configuration
 // export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-// export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.0.26:8000';
+// export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.0.15:8000';
 // API Configuration - dynamically uses the same host as the frontend
 const getApiBaseUrl = () => {
   // If REACT_APP_API_URL is explicitly set, use it

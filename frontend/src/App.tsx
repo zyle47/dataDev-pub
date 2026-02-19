@@ -34,6 +34,68 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const hostname = window.location.hostname;
+    const wsUrl = `${protocol}//${hostname}/api/ws`;
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+
+    const connect = () => {
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        console.log('WebSocket connected to', wsUrl);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          console.log('WebSocket message received:', msg);
+          
+          if (msg.type === 'images.updated') {
+            console.log('Images updated event received');
+            loadImages();
+          } else if (msg.type === 'annotations.updated') {
+            console.log('Annotations updated event received');
+            if (selected) {
+              const reloadAnnotations = async () => {
+                const anns = await getAnnotations(selected.image_id);
+                setAnnotationsForThisImage(anns);
+              };
+              reloadAnnotations().catch(err => console.error('Failed to reload annotations:', err));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to parse WebSocket message:', err);
+        }
+      };
+
+      ws.onerror = (event) => {
+        console.error('WebSocket error:', event);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed, reconnecting in 3s...');
+        reconnectTimeout = setTimeout(() => {
+          connect();
+        }, 3000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
+  }, [selected]); // Re-establish connection if selected changes
+
   // const handleDeselectImage = () => {
   //   setSelected(null);
   // };

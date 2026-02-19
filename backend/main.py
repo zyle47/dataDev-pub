@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Body
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Body, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from database import SessionLocal, engine
@@ -27,9 +27,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://192.168.0.26:3000",     # Machine's IP
-        "http://192.168.0.26:8000",     # Machine's IP
-        "http://192.168.0.26",           # Machine's IP
+        "http://192.168.0.15:3000",     # Machine's IP
+        "http://192.168.0.15:8000",     # Machine's IP
+        "http://192.168.0.15",           # Machine's IP
         "http://mysite.local",           # Custom local domain
         "http://api.mysite.local",       # Custom local domain
     ],
@@ -51,6 +51,34 @@ Base.metadata.create_all(bind=engine)
 app.mount("/uploads", StaticFiles(directory=app.state.UPLOAD_DIR), name="uploads")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# WebSocket client management for live broadcasts
+_ws_clients: set[WebSocket] = set()
+
+async def broadcast_event(event: dict) -> None:
+    """Broadcast event to all connected WebSocket clients."""
+    dead_clients = set()
+    for ws in _ws_clients:
+        try:
+            await ws.send_json(event)
+        except Exception:
+            # mark disconnected clients for removal
+            dead_clients.add(ws)
+    _ws_clients.difference_update(dead_clients)
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    _ws_clients.add(websocket)
+    try:
+        while True:
+            # keep connection alive
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        _ws_clients.discard(websocket)
+    except Exception:
+        _ws_clients.discard(websocket)
+
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
@@ -62,6 +90,13 @@ def read_root():
     with open("static/api_description.json", "r") as file:
         data = json.load(file)
     return data
+
+
+@app.get("/test-broadcast")
+async def test_broadcast():
+    """Test endpoint to broadcast a test message to all WebSocket clients."""
+    await broadcast_event({"type": "test", "message": "Hello from test endpoint!"})
+    return {"status": "broadcast sent", "clients": len(_ws_clients)}
 
 
 @app.post("/images/")
@@ -78,6 +113,8 @@ async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_d
         shutil.copyfileobj(file.file, buffer)
 
     image = create_image(db, filename)
+    # notify clients that images changed
+    await broadcast_event({"type": "images.updated", "image_id": image.id})
     return {"image_id": image.id, "url": f"/uploads/{filename}"}
 
 
@@ -106,13 +143,19 @@ async def upload_images_bulk(files: list[UploadFile] = File(...), db: Session = 
         except Exception as e:
             errors.append({"filename": file.filename, "error": str(e)})
     
-    return {
+    result = {
         "uploaded": uploaded,
         "errors": errors,
         "total": len(files),
         "success_count": len(uploaded),
         "error_count": len(errors)
     }
+
+    # notify clients if any uploaded
+    if uploaded:
+        await broadcast_event({"type": "images.updated"})
+
+    return result
 
 
 @app.get("/images/")
@@ -122,11 +165,13 @@ def list_images(db: Session = Depends(get_db)):
 
 
 @app.post("/images/{image_id}/annotations")
-def add_annotations(image_id: int, annotations: list[AnnotationSchema] = Body(...), db: Session = Depends(get_db)):
+async def add_annotations(image_id: int, annotations: list[AnnotationSchema] = Body(...), db: Session = Depends(get_db)):
     if not get_image(db, image_id):
         raise HTTPException(status_code=404, detail="Image not found")
 
     save_annotations(db, image_id, annotations)
+    # notify clients that annotations changed for this image
+    await broadcast_event({"type": "annotations.updated", "image_id": image_id})
     return {"status": "annotations saved"}
 
 
@@ -151,18 +196,19 @@ def download_annotations(image_id: int, db: Session = Depends(get_db)):
 
 
 @app.delete("/images/{image_id}/annotations")
-def delete_all_annotations(image_id: int, db: Session = Depends(get_db)):
+async def delete_all_annotations(image_id: int, db: Session = Depends(get_db)):
     if not get_image(db, image_id):
         raise HTTPException(status_code=404, detail="Image not found")
     
     deleted_count = db.query(Annotation).filter(Annotation.image_id == image_id).delete()
     db.commit()
-    
+    # notify clients
+    await broadcast_event({"type": "annotations.updated", "image_id": image_id})
     return {"status": "success", "deleted_count": deleted_count}
 
 
 @app.delete("/images/{image_id}")
-def delete_image_endpoint(image_id: int, db: Session = Depends(get_db)):
+async def delete_image_endpoint(image_id: int, db: Session = Depends(get_db)):
     """Delete an image and all its annotations"""
     image = get_image(db, image_id)
     if not image:
@@ -181,7 +227,8 @@ def delete_image_endpoint(image_id: int, db: Session = Depends(get_db)):
             except Exception as e:
                 # Log error but don't fail if file doesn't exist
                 pass
-    
+    # notify clients that images changed
+    await broadcast_event({"type": "images.updated", "image_id": image_id})
     return {"status": "success", "message": "Image and all annotations deleted"}
 
 

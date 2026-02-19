@@ -5,7 +5,9 @@ services:
     build:
       context: ./backend
     volumes:
-      - backend:/app/backend  # Mount backend volume to /app/backend in the container
+      - backend:/backend/uploads  # Persist uploaded images
+      - backend_db:/backend/annotations_export  # Persist annotation exports
+      - backend_data:/backend/data  # Persist SQLite database
     expose:
       - "8000"
     ports:
@@ -16,8 +18,6 @@ services:
   frontend:
     build:
       context: ./frontend
-    volumes:
-      - frontend:/app/frontend  # Mount frontend volume to /app/frontend in the container
     expose:
       - "3000"
     ports:
@@ -37,6 +37,8 @@ services:
 
 volumes:
   backend:
-    driver: local  # Docker-managed volume for backend
-  frontend:
-    driver: local  # Docker-managed volume for frontend
+    driver: local  # For uploads
+  backend_db:
+    driver: local  # For annotations_export
+  backend_data:
+    driver: local  # For SQLite database
