@@ -113,17 +113,30 @@ function App() {
     const isSame = (a: Annotation, b: Annotation) =>
       JSON.stringify(a) === JSON.stringify(b);
 
-    const newAnnotations = annotations.filter(
-      a => !prev.some(b => isSame(a, b))
-    );
+    const newAnnotations = annotations.filter(a => !prev.some(b => isSame(a, b)));
+    const deletedAnnotations = prev.filter(b => !annotations.some(a => isSame(a, b)));
 
-    if (newAnnotations.length === 0) {
-      warning("No new annotations to save!");
+    if (newAnnotations.length === 0 && deletedAnnotations.length === 0) {
+      warning("No changes to save!");
       return;
     }
 
     try {
       setIsLoading(true);
+
+      // If any deletions occurred, replace backend annotations: delete all then re-post current set
+      if (deletedAnnotations.length > 0) {
+        await deleteAllAnnotations(selected.image_id);
+        if (annotations.length > 0) {
+          await postAnnotations(selected.image_id, annotations);
+        }
+        const count = annotations.length;
+        success(`Annotations updated successfully!`);
+        setAnnotationsForThisImage(annotations);
+        return;
+      }
+
+      // Only additions — post just new annotations
       await postAnnotations(selected.image_id, newAnnotations);
       const count = newAnnotations.length;
       success(`${count} ${count === 1 ? 'annotation' : 'annotations'} saved successfully!`);
