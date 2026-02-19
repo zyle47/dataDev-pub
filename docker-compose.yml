@@ -8,6 +8,8 @@ services:
       - backend:/app/backend  # Mount backend volume to /app/backend in the container
     expose:
       - "8000"
+    ports:
+      - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -18,6 +20,8 @@ services:
       - frontend:/app/frontend  # Mount frontend volume to /app/frontend in the container
     expose:
       - "3000"
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
 
